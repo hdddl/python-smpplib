@@ -59,6 +59,7 @@ class Client(object):
     _socket = None
     _ssl_context = None
     sequence_generator = None
+    bind_addr = None
 
     def __init__(
         self,
@@ -69,6 +70,7 @@ class Client(object):
         logger_name=None,
         ssl_context=None,
         allow_unknown_opt_params=None,
+        bind_addr = None,
     ):
         self.host = host
         self.port = int(port)
@@ -78,6 +80,7 @@ class Client(object):
         if sequence_generator is None:
             sequence_generator = SimpleSequenceGenerator()
         self.sequence_generator = sequence_generator
+        self.bind_addr = bind_addr
 
         if allow_unknown_opt_params is None:
             warnings.warn(
@@ -122,6 +125,12 @@ class Client(object):
     def _create_socket(self):
         raw_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         raw_socket.settimeout(self.timeout)
+
+        raw_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, True)
+
+        if self.bind_addr is not None:
+            raw_socket.bind(self.bind_addr)
+            
 
         if self._ssl_context is None:
             return raw_socket
